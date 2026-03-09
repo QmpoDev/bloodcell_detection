@@ -24,10 +24,11 @@ EventDP/
 
 - **Source:** Blood Cell Images (dataset2-master) — augmented images (rotated, scaled, flipped).
 - **Classes:** Eosinophil, Lymphocyte, Monocyte, Neutrophil (4 classes).
-- **Subset size:** 4000 images (1000 per class).
-- **Split:** 70% training, 15% validation, 15% testing. Validation and training are sampled from the original TRAIN folder; test images come only from the original TEST folder to avoid data leakage.
+- **Subset (default):** 4000 images (1000 per class), 70% / 15% / 15%.
+- **Full dataset:** `prepare_data.py --full` uses all images (~12.5k): 70% of TRAIN → train, 30% → val, 100% of TEST → test.
+- Train/val from original TRAIN folder; test from TEST folder only (no leakage).
 
-### data_split layout
+### data_split layout (4000 subset)
 
 | Set       | Images | Per class |
 |----------|--------|-----------|
@@ -35,6 +36,8 @@ EventDP/
 | VAL      | 600    | 150       |
 | TEST     | 600    | 150       |
 | **Total**| **4000**| **1000**  |
+
+For full dataset, counts depend on `data_raw` (~6.9k train, ~3k val, ~2.5k test).
 
 ## Setup
 
@@ -52,31 +55,38 @@ EventDP/
 
 ## Usage
 
-### Data preparation (Lab 2)
+### Data preparation
 
-Build the train/validation/test split from the raw data:
+Build the train/validation/test split from the raw data.
 
+**4000-image subset (default):**
 ```bash
 python prepare_data.py
 ```
+- 1000 per class, 70% train / 15% val / 15% test (2800 / 600 / 600).
 
-- Reads from `data_raw/` and writes into `data_split/`.
-- Uses a fixed random seed (42) so the split is reproducible.
-- Run again to regenerate the same 600-image split (overwrites existing files in `data_split/`).
+**Full dataset (~12.5k):**
+```bash
+python prepare_data.py --full
+```
+- Uses all images: 70% of TRAIN → train, 30% of TRAIN → val, 100% of TEST → test.
+- Uses a fixed random seed (42); run again to regenerate (overwrites `data_split/`).
 
 ### Verify data split
 
-Check that `data_split` has the correct structure and image counts (2800 train, 600 val, 600 test, 4000 total):
-
+**4000 subset:** check structure and counts (2800 / 600 / 600):
 ```bash
 python check_data_split.py
 ```
 
-Prints a per-class table and exits with code 0 if correct, 1 if there are missing folders or wrong counts.
+**Full dataset:** report counts only:
+```bash
+python check_data_split.py --full
+```
 
 ### Training
 
-Run training (uses `data_split/TRAIN`, `data_split/VAL`, and `data_split/TEST`; model saved to `saved_model/blood_cell_model.keras`):
+Run training (auto-detects 4000 or full-dataset sizes; model saved to `saved_model/blood_cell_model.keras`):
 
 ```bash
 python training.py

@@ -1,15 +1,22 @@
 import os
-import tensorflow as tf
+from pathlib import Path
 from tensorflow import keras
 from tensorflow.keras import layers
 
-# Step 1: Paths and config (match data_split from prepare_data.py)
+# Step 1: Paths and config (works for 4000 subset or full dataset)
 train_dir = "data_split/TRAIN"
 val_dir = "data_split/VAL"
 test_dir = "data_split/TEST"
 batch_size = 32
 image_size = (150, 150)
 num_classes = 4  # Eosinophil, Lymphocyte, Monocyte, Neutrophil
+
+def _count_images(dir_path: str) -> int:
+    p = Path(dir_path)
+    if not p.exists():
+        return 0
+    exts = {".jpg", ".jpeg", ".png", ".bmp", ".gif"}
+    return sum(1 for f in p.rglob("*") if f.is_file() and f.suffix.lower() in exts)
 
 # Step 2: Load as tf.data.Dataset (avoids "ran out of data" with repeat)
 train_ds = keras.utils.image_dataset_from_directory(
@@ -59,18 +66,20 @@ model = keras.Sequential([
     layers.Dense(num_classes, activation="softmax"),
 ])
 
-# Step 4: Compile
+# Step 4: Compile (lower LR helps when model stays at random accuracy)
 model.compile(
-    optimizer="adam",
+    optimizer=keras.optimizers.Adam(learning_rate=1e-4),
     loss="categorical_crossentropy",
     metrics=["accuracy"],
 )
 
-# Step 5: Train with early stopping (stop when val_loss stops improving; use best weights)
-train_samples = 2800  # 4000 total: 70% train, 15% val, 15% test
-val_samples = 600
+# Step 5: Train with early stopping (auto-detect sizes for 4000 subset or full dataset)
+train_samples = _count_images(train_dir)
+val_samples = _count_images(val_dir)
 steps_per_epoch = train_samples // batch_size
 validation_steps = max(1, val_samples // batch_size)
+if train_samples == 0 or val_samples == 0:
+    raise RuntimeError("No images in data_split/TRAIN or data_split/VAL. Run prepare_data.py first.")
 
 early_stop = keras.callbacks.EarlyStopping(
     monitor="val_loss",
