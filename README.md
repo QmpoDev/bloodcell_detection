@@ -53,6 +53,42 @@ For full dataset, counts depend on `data_raw` (~6.9k train, ~3k val, ~2.5k test)
 
 3. For **training**: install TensorFlow and Pillow (e.g. `pip install tensorflow pillow`). Keras uses Pillow to load images; **augment.py** also needs Pillow.
 
+## Cloning and setting up on another PC
+
+On a new machine, clone the repo and prepare the environment and data:
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/QmpoDev/bloodcell_detection.git
+cd bloodcell_detection
+
+# 2. (Optional) Create and activate a virtual environment
+python -m venv venv
+venv\Scripts\activate   # Windows
+# source venv/bin/activate   # Linux / macOS
+
+# 3. Install dependencies
+pip install tensorflow pillow
+
+# 4. Add the dataset: place the dataset2-master folder so this path exists:
+#    data_raw/dataset2-master/dataset2-master/images/
+#    with subfolders TRAIN/ and TEST/, each containing EOSINOPHIL, LYMPHOCYTE, MONOCYTE, NEUTROPHIL.
+#    (Get the dataset from the Blood Cell Images / BCCD source; it is not in the repo.)
+
+# 5. Build the train/val/test split (choose one)
+python prepare_data.py              # 4000-image subset
+# python prepare_data.py --full     # full dataset (~12.5k)
+
+# 6. (Optional) Verify the split
+python check_data_split.py          # for 4000 subset
+# python check_data_split.py --full # for full dataset
+
+# 7. Train the model
+python training.py
+```
+
+After training, the model is saved as `saved_model/blood_cell_model.keras`. Use `python classify.py path/to/image.jpg` to classify an image.
+
 ## Usage
 
 ### Data preparation
